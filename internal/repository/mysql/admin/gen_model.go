@@ -3,9 +3,10 @@ package admin
 import "time"
 
 // Admin 管理员表
+//
 //go:generate gormgen -structs Admin -input .
 type Admin struct {
-	Id          int32     // 主键
+	Id          int32     `gorm:"primaryKey"` // 主键
 	Username    string    // 用户名
 	Password    string    // 密码
 	Nickname    string    // 昵称

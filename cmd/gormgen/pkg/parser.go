@@ -93,6 +93,9 @@ func (p *Parser) parseTypes(file *ast.File) (ret []structConfig) {
 					optionField.ColumnName = gorm.ToDBName(optionField.FieldName)
 					optionField.HumpName = SQLColumnToHumpStyle(optionField.ColumnName)
 				}
+				if v.Tag != nil && strings.Contains(v.Tag.Value, "gorm") && strings.Contains(v.Tag.Value, "primaryKey") {
+					data.PkField = optionField
+				}
 
 				data.OptionFields = append(data.OptionFields, optionField)
 			}

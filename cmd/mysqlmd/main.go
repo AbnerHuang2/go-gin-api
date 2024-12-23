@@ -39,10 +39,10 @@ var (
 )
 
 func init() {
-	addr := flag.String("addr", "", "请输入 db 地址，例如：127.0.0.1:3306\n")
-	user := flag.String("user", "", "请输入 db 用户名\n")
-	pass := flag.String("pass", "", "请输入 db 密码\n")
-	name := flag.String("name", "", "请输入 db 名称\n")
+	addr := flag.String("addr", "127.0.0.1:3306", "请输入 db 地址，例如：127.0.0.1:3306\n")
+	user := flag.String("user", "root", "请输入 db 用户名\n")
+	pass := flag.String("pass", "123", "请输入 db 密码\n")
+	name := flag.String("name", "post_platform", "请输入 db 名称\n")
 	table := flag.String("tables", "*", "请输入 table 名称，默认为“*”，多个可用“,”分割\n")
 
 	flag.Parse()
@@ -126,7 +126,9 @@ func main() {
 				info.ColumnDefault.String,
 			)
 
-			if textType(info.DataType) == "time.Time" {
+			if info.ColumnKey.String == "PRI" {
+				modelContent += fmt.Sprintf("%s %s `gorm:\"primaryKey\"` // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
+			} else if textType(info.DataType) == "time.Time" {
 				modelContent += fmt.Sprintf("%s %s `%s` // %s\n", capitalize(info.ColumnName), textType(info.DataType), "gorm:\"time\"", info.ColumnComment.String)
 			} else {
 				modelContent += fmt.Sprintf("%s %s // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
@@ -145,6 +147,7 @@ func main() {
 }
 
 func queryTables(db *gorm.DB, dbName string, tableName string) ([]tableInfo, error) {
+	fmt.Println("接收的tableName： " + tableName)
 	var tableCollect []tableInfo
 	var tableArray []string
 	var commentArray []sql.NullString
@@ -170,7 +173,7 @@ func queryTables(db *gorm.DB, dbName string, tableName string) ([]tableInfo, err
 	}
 
 	// filter tables when specified tables params
-	if tableName != "*" {
+	if tableName != "*" && tableName != "all" {
 		tableCollect = nil
 		chooseTables := strings.Split(tableName, ",")
 		indexMap := make(map[int]int)

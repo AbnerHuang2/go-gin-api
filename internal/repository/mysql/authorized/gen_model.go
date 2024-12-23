@@ -3,9 +3,10 @@ package authorized
 import "time"
 
 // Authorized 已授权的调用方表
+//
 //go:generate gormgen -structs Authorized -input .
 type Authorized struct {
-	Id                int32     // 主键
+	Id                int32     `gorm:"primaryKey"` // 主键
 	BusinessKey       string    // 调用方key
 	BusinessSecret    string    // 调用方secret
 	BusinessDeveloper string    // 调用方对接人

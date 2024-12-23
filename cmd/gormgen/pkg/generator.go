@@ -26,6 +26,7 @@ type structConfig struct {
 	StructName   string
 	OnlyFields   []fieldConfig
 	OptionFields []fieldConfig
+	PkField      fieldConfig
 }
 
 type ImportPkg struct {
