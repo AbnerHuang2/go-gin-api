@@ -14,8 +14,9 @@ import (
 )
 
 type tableInfo struct {
-	Name    string         `db:"table_name"`    // name
-	Comment sql.NullString `db:"table_comment"` // comment
+	Name       string `db:"table_name"` // name
+	StrcutName string
+	Comment    sql.NullString `db:"table_comment"` // comment
 }
 
 type tableColumn struct {
@@ -73,9 +74,11 @@ func main() {
 		return
 	}
 
+	fileDir := "./internal/repository/mysql/"
+
 	for _, table := range tables {
 
-		filepath := "./internal/repository/mysql/" + table.Name
+		filepath := fileDir + table.StrcutName
 		_ = os.Mkdir(filepath, 0766)
 		fmt.Println("create dir : ", filepath)
 
@@ -85,7 +88,7 @@ func main() {
 			fmt.Printf("markdown file error %v\n", err.Error())
 			return
 		}
-		fmt.Println("  └── file : ", table.Name+"/gen_table.md")
+		fmt.Println("  └── file : ", table.StrcutName+"/gen_table.md")
 
 		modelName := fmt.Sprintf("%s/gen_model.go", filepath)
 		modelFile, err := os.OpenFile(modelName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0766)
@@ -93,13 +96,13 @@ func main() {
 			fmt.Printf("create and open model file error %v\n", err.Error())
 			return
 		}
-		fmt.Println("  └── file : ", table.Name+"/gen_model.go")
+		fmt.Println("  └── file : ", table.StrcutName+"/gen_model.go")
 
-		modelContent := fmt.Sprintf("package %s\n", table.Name)
+		modelContent := fmt.Sprintf("package %s\n", table.StrcutName)
 		modelContent += fmt.Sprintf(`import "time"`)
-		modelContent += fmt.Sprintf("\n\n// %s %s \n", capitalize(table.Name), table.Comment.String)
-		modelContent += fmt.Sprintf("//go:generate gormgen -structs %s -input . \n", capitalize(table.Name))
-		modelContent += fmt.Sprintf("type %s struct {\n", capitalize(table.Name))
+		modelContent += fmt.Sprintf("\n\n// %s %s \n", capitalize(table.StrcutName), table.Comment.String)
+		modelContent += fmt.Sprintf("//go:generate gormgen -structs %s -input . \n", capitalize(table.StrcutName))
+		modelContent += fmt.Sprintf("type %s struct {\n", capitalize(table.StrcutName))
 
 		tableContent := fmt.Sprintf("#### %s.%s \n", dbName, table.Name)
 		if table.Comment.String != "" {
@@ -113,6 +116,7 @@ func main() {
 		if columnInfoErr != nil {
 			continue
 		}
+		needTime := false
 		for _, info := range columnInfo {
 			tableContent += fmt.Sprintf(
 				"| %d | %s | %s | %s | %s | %s | %s | %s |\n",
@@ -130,9 +134,13 @@ func main() {
 				modelContent += fmt.Sprintf("%s %s `gorm:\"primaryKey\"` // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
 			} else if textType(info.DataType) == "time.Time" {
 				modelContent += fmt.Sprintf("%s %s `%s` // %s\n", capitalize(info.ColumnName), textType(info.DataType), "gorm:\"time\"", info.ColumnComment.String)
+				needTime = true
 			} else {
 				modelContent += fmt.Sprintf("%s %s // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
 			}
+		}
+		if !needTime {
+			modelContent = strings.Replace(modelContent, "import \"time\"", "", 1)
 		}
 
 		mdFile.WriteString(tableContent)
@@ -144,6 +152,12 @@ func main() {
 
 	}
 
+}
+
+func removePrefixAndSuffix(s string) string {
+	s = strings.TrimPrefix(s, "t_")
+	s = strings.TrimSuffix(s, "_tab")
+	return s
 }
 
 func queryTables(db *gorm.DB, dbName string, tableName string) ([]tableInfo, error) {
@@ -191,6 +205,7 @@ func queryTables(db *gorm.DB, dbName string, tableName string) ([]tableInfo, err
 			for _, v := range indexMap {
 				var info tableInfo
 				info.Name = tableArray[v]
+				info.StrcutName = removePrefixAndSuffix(info.Name)
 				info.Comment = commentArray[v]
 				tableCollect = append(tableCollect, info)
 			}

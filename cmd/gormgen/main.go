@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -16,7 +17,7 @@ var (
 
 func init() {
 	flagStructs := flag.String("structs", "", "[Required] The name of schema structs to generate structs for, comma seperated\n")
-	flagInput := flag.String("input", "", "[Required] The name of the input file dir\n")
+	flagInput := flag.String("input", "./", "[Required] The name of the input file dir\n")
 	flag.Parse()
 
 	if *flagStructs == "" || *flagInput == "" {
@@ -29,6 +30,7 @@ func init() {
 }
 
 func main() {
+	fmt.Println("gormgen start...with input:", input, "structs:", structs)
 	gen := pkg.NewGenerator(input)
 	p := pkg.NewParser(input)
 	if err := gen.ParserAST(p, structs).Generate().Format().Flush(); err != nil {

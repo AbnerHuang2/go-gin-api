@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -27,6 +28,7 @@ type structConfig struct {
 	OnlyFields   []fieldConfig
 	OptionFields []fieldConfig
 	PkField      fieldConfig
+	TemplateName string
 }
 
 type ImportPkg struct {
@@ -90,16 +92,35 @@ func (g *Generator) Generate() *Generator {
 		panic(err)
 	}
 
-	for _, v := range g.structConfigs {
+	for i, v := range g.structConfigs {
 		if _, ok := g.buf[gorm.ToDBName(v.StructName)]; !ok {
 			continue
 		}
-		if err := outputTemplate.Execute(g.buf[gorm.ToDBName(v.StructName)], v); err != nil {
+		// 生成 repo
+		err := g.generateByTemplateFilePath(i, v, "/Users/housheng.huang/projects/github_projects/go-gin-api/cmd/gormgen/template/test_repo.txt")
+		if err != nil {
 			panic(err)
 		}
 	}
 
 	return g
+}
+
+func (g *Generator) generateByTemplateFilePath(i int, v structConfig, filePath string) error {
+	templateBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	// filePath 中取文件名作为模板名称
+	templateName := strings.Split(filePath, "/")[len(strings.Split(filePath, "/"))-1]
+	// 去除文件后缀
+	templateName = strings.Split(templateName, ".")[0]
+	g.structConfigs[i].TemplateName = templateName
+	outputTemplate = parseTemplateOrPanic(string(templateBytes))
+	if err := outputTemplate.Execute(g.buf[gorm.ToDBName(v.StructName)], v); err != nil {
+		panic(err)
+	}
+	return err
 }
 
 // Format function formats the output of the generation.
@@ -117,7 +138,14 @@ func (g *Generator) Format() *Generator {
 // Flush function writes the output to the output file.
 func (g *Generator) Flush() error {
 	for k := range g.buf {
-		filename := g.inputFile + "/gen_" + strings.ToLower(k) + ".go"
+		templateName := ""
+		for i := range g.structConfigs {
+			if gorm.ToDBName(g.structConfigs[i].StructName) == k {
+				templateName = g.structConfigs[i].TemplateName
+				break
+			}
+		}
+		filename := g.inputFile + "/gen_" + templateName + "_" + strings.ToLower(k) + ".go"
 		if err := ioutil.WriteFile(filename, g.buf[k].Bytes(), 0777); err != nil {
 			log.Fatalln(err)
 		}

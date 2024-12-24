@@ -1,0 +1,14 @@
+package {{.PkgName}}
+
+import (
+	"context"
+)
+
+type {{.StructName}}Repo interface {
+	Save(ctx context.Context, entity *{{.StructName}}) error
+	Update(ctx context.Context, entity *{{.StructName}}) error
+	SelectByFilter(ctx context.Context, filter *{{.StructName}}) ([]*{{.StructName}}, error)
+	CountByFilter(ctx context.Context, filter *{{.StructName}}) (int64, error)
+	GenerateVasId(ctx context.Context, region string) (string, error)
+	DeleteByFilter(ctx context.Context, filter *{{.StructName}}) error
+}

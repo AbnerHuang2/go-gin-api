@@ -23,8 +23,25 @@ fi
 mv gormgen $GOPATH/bin
 shellExit $?
 
-go generate ./...
-shellExit $?
+#如果tables != all 则只生成指定的表
+if [ $5 != "all" ];then
+    printf "\nGenerating code for tables: $5\n\n"
+    # 根据，分割
+    IFS=',' read -r -a tables <<< "$5"
+    for table in "${tables[@]}"
+    do
+        printf "\nGenerating code for table: $table\n\n"
+        result="${table#t_}"  # 去掉前缀
+        result="${result%_tab}"  # 再去掉后缀
+        printf "\nGenerating code for table without prefix and suffix: $result\n\n"
+        go generate ./internal/repository/mysql/$result/...
+        shellExit $?
+    done
+else
+    printf "\nGenerating code for all tables\n\n"
+    go generate ./...
+    shellExit $?
+fi
 
 printf "\nFormatting code\n\n"
 time go run -v ./cmd/mfmt/main.go

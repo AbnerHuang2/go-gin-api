@@ -1,0 +1,11 @@
+package {{.PkgName}}
+
+import (
+	"context"
+)
+
+type {{.StructName}}Entity struct {
+	{{range .OptionFields}}
+	    {{.Name}} {{.Type}} `json:"{{.Name}}" gorm:"{{.GormTag}}"` // {{.Comment}}
+	{{end}}
+}
