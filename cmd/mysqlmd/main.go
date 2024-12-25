@@ -130,14 +130,16 @@ func main() {
 				info.ColumnDefault.String,
 			)
 
+			gormTag := "gorm:\"column:" + info.ColumnName + ";"
 			if info.ColumnKey.String == "PRI" {
-				modelContent += fmt.Sprintf("%s %s `gorm:\"primaryKey\"` // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
+				gormTag += " primaryKey;"
 			} else if textType(info.DataType) == "time.Time" {
-				modelContent += fmt.Sprintf("%s %s `%s` // %s\n", capitalize(info.ColumnName), textType(info.DataType), "gorm:\"time\"", info.ColumnComment.String)
-				needTime = true
-			} else {
-				modelContent += fmt.Sprintf("%s %s // %s\n", capitalize(info.ColumnName), textType(info.DataType), info.ColumnComment.String)
+				gormTag += " time;"
 			}
+			gormTag += "\""
+			modelContent += fmt.Sprintf("%s %s `%s` // %s\n", capitalize(info.ColumnName), textType(info.DataType),
+				gormTag,
+				info.ColumnComment.String)
 		}
 		if !needTime {
 			modelContent = strings.Replace(modelContent, "import \"time\"", "", 1)

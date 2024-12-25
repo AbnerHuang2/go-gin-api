@@ -23,6 +23,7 @@ fi
 mv gormgen $GOPATH/bin
 shellExit $?
 
+time go install golang.org/x/tools/cmd/goimports@latest
 #如果tables != all 则只生成指定的表
 if [ $5 != "all" ];then
     printf "\nGenerating code for tables: $5\n\n"
@@ -35,11 +36,13 @@ if [ $5 != "all" ];then
         result="${result%_tab}"  # 再去掉后缀
         printf "\nGenerating code for table without prefix and suffix: $result\n\n"
         go generate ./internal/repository/mysql/$result/...
+        goimports -w ./internal/repository/mysql/$result
         shellExit $?
     done
 else
     printf "\nGenerating code for all tables\n\n"
     go generate ./...
+    goimports -w .
     shellExit $?
 fi
 

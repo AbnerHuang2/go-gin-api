@@ -13,41 +13,9 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// fieldConfig
-type fieldConfig struct {
-	FieldName  string
-	ColumnName string
-	FieldType  string
-	HumpName   string
-}
-
-// structConfig
-type structConfig struct {
-	config
-	StructName   string
-	OnlyFields   []fieldConfig
-	OptionFields []fieldConfig
-	PkField      fieldConfig
-	TemplateName string
-}
-
-type ImportPkg struct {
-	Pkg string
-}
-
-type structHelpers struct {
-	Titelize func(string) string
-}
-
-type config struct {
-	PkgName          string
-	Helpers          structHelpers
-	QueryBuilderName string
-}
-
 // The Generator is the one responsible for generating the code, adding the imports, formating, and writing it to the file.
 type Generator struct {
-	buf           map[string]*bytes.Buffer
+	buf           map[string]map[string]*bytes.Buffer
 	inputFile     string
 	config        config
 	structConfigs []structConfig
@@ -56,7 +24,7 @@ type Generator struct {
 // NewGenerator function creates an instance of the generator given the name of the output file as an argument.
 func NewGenerator(outputFile string) *Generator {
 	return &Generator{
-		buf:       map[string]*bytes.Buffer{},
+		buf:       map[string]map[string]*bytes.Buffer{},
 		inputFile: outputFile,
 	}
 }
@@ -64,7 +32,7 @@ func NewGenerator(outputFile string) *Generator {
 // ParserAST parse by go file
 func (g *Generator) ParserAST(p *Parser, structs []string) (ret *Generator) {
 	for _, v := range structs {
-		g.buf[gorm.ToDBName(v)] = new(bytes.Buffer)
+		g.buf[gorm.ToDBName(v)] = make(map[string]*bytes.Buffer)
 	}
 	g.structConfigs = p.Parse()
 	g.config.PkgName = p.pkg.Name
@@ -96,8 +64,29 @@ func (g *Generator) Generate() *Generator {
 		if _, ok := g.buf[gorm.ToDBName(v.StructName)]; !ok {
 			continue
 		}
+		dir, err2 := os.Getwd()
+		if err2 != nil {
+			panic(err2)
+		}
+		index := strings.Index(dir, "go-gin-api")
+		if index == -1 {
+			panic("not found go-gin-api")
+		}
+		rootDir := dir[:index] + "go-gin-api"
+		fmt.Println("rootDir: ", rootDir)
+
+		// 生成 entity
+		err := g.generateByTemplateFilePath(i, v, rootDir+"/cmd/gormgen/template/entity.txt")
+		if err != nil {
+			panic(err)
+		}
 		// 生成 repo
-		err := g.generateByTemplateFilePath(i, v, "/Users/housheng.huang/projects/github_projects/go-gin-api/cmd/gormgen/template/test_repo.txt")
+		err = g.generateByTemplateFilePath(i, v, rootDir+"/cmd/gormgen/template/repo.txt")
+		if err != nil {
+			panic(err)
+		}
+		// 生成default_repo
+		err = g.generateByTemplateFilePath(i, v, rootDir+"/cmd/gormgen/template/default_repo.txt")
 		if err != nil {
 			panic(err)
 		}
@@ -117,7 +106,9 @@ func (g *Generator) generateByTemplateFilePath(i int, v structConfig, filePath s
 	templateName = strings.Split(templateName, ".")[0]
 	g.structConfigs[i].TemplateName = templateName
 	outputTemplate = parseTemplateOrPanic(string(templateBytes))
-	if err := outputTemplate.Execute(g.buf[gorm.ToDBName(v.StructName)], v); err != nil {
+	g.buf[gorm.ToDBName(v.StructName)][templateName] = new(bytes.Buffer)
+	fmt.Println("templateName: ", templateName)
+	if err := outputTemplate.Execute(g.buf[gorm.ToDBName(v.StructName)][templateName], v); err != nil {
 		panic(err)
 	}
 	return err
@@ -126,11 +117,13 @@ func (g *Generator) generateByTemplateFilePath(i int, v structConfig, filePath s
 // Format function formats the output of the generation.
 func (g *Generator) Format() *Generator {
 	for k := range g.buf {
-		formattedOutput, err := format.Source(g.buf[k].Bytes())
-		if err != nil {
-			panic(err)
+		for k2, v := range g.buf[k] {
+			formattedOutput, err := format.Source(v.Bytes())
+			if err != nil {
+				panic(err)
+			}
+			g.buf[k][k2] = bytes.NewBuffer(formattedOutput)
 		}
-		g.buf[k] = bytes.NewBuffer(formattedOutput)
 	}
 	return g
 }
@@ -138,18 +131,14 @@ func (g *Generator) Format() *Generator {
 // Flush function writes the output to the output file.
 func (g *Generator) Flush() error {
 	for k := range g.buf {
-		templateName := ""
-		for i := range g.structConfigs {
-			if gorm.ToDBName(g.structConfigs[i].StructName) == k {
-				templateName = g.structConfigs[i].TemplateName
-				break
+		for k2, v := range g.buf[k] {
+			filename := "/gen_" + strings.ToLower(k) + "_" + k2 + ".go"
+			filepath := g.inputFile + filename
+			if err := ioutil.WriteFile(filepath, v.Bytes(), 0777); err != nil {
+				log.Fatalln(err)
 			}
+			fmt.Println("  └── file : ", fmt.Sprintf("%s/%s", strings.ToLower(k), filename))
 		}
-		filename := g.inputFile + "/gen_" + templateName + "_" + strings.ToLower(k) + ".go"
-		if err := ioutil.WriteFile(filename, g.buf[k].Bytes(), 0777); err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Println("  └── file : ", fmt.Sprintf("%s_repo/gen_%s.go", strings.ToLower(k), strings.ToLower(k)))
 	}
 	return nil
 }
