@@ -1,2 +1,40 @@
+[hashids]
+  length = 12
+  secret = "6ab6122836cfef95f8db"
 
+[language]
+  local = "zh-cn"
 
+[mail]
+  host = "smtp.163.com"
+  pass = ""
+  port = 465
+  to = ""
+  user = ""
+
+[mysql]
+
+  [mysql.base]
+    connmaxlifetime = 60
+    maxidleconn = 60
+    maxopenconn = 10
+
+  [mysql.read]
+    addr = "mysql.sqlpub.com:3306"
+    name = "skitii_sql_pub"
+    pass = "VWARKd8tTDDoAWve"
+    user = "skitii"
+
+  [mysql.write]
+    addr = "mysql.sqlpub.com:3306"
+    name = "skitii_sql_pub"
+    pass = "VWARKd8tTDDoAWve"
+    user = "skitii"
+
+[redis]
+  addr = "redis-12245.c295.ap-southeast-1-1.ec2.redns.redis-cloud.com:12245"
+  db = "0"
+  maxretries = 3
+  minidleconns = 5
+  pass = "CN9yELDMUxBt14QLOJDQTzNYFsNf5EDJ"
+  poolsize = 10

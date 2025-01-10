@@ -3,6 +3,7 @@ package env
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -55,6 +56,16 @@ func (e *environment) t() {}
 func init() {
 	env := flag.String("env", "", "请输入运行环境:\n dev:开发环境\n fat:测试环境\n uat:预上线环境\n pro:正式环境\n")
 	flag.Parse()
+
+	if env == nil || *env == "" {
+		envInEnv := os.Getenv("env")
+		if envInEnv != "" {
+			env = &envInEnv
+			fmt.Println("INFO: 'env' is found in the environment variable, and it will be used as the value of '-env'.", *env)
+		}
+	} else {
+		fmt.Println("INFO: '-env' is found, and it will be used as the value of 'ENV'.", *env)
+	}
 
 	switch strings.ToLower(strings.TrimSpace(*env)) {
 	case "dev":
