@@ -74,7 +74,7 @@ func main() {
 		return
 	}
 
-	fileDir := "./internal/repository/mysql/"
+	fileDir := "./skitii/repository/mysql/"
 
 	for _, table := range tables {
 

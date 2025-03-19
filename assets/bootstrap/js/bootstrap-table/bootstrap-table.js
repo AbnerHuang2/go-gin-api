@@ -1514,7 +1514,7 @@
 	// https://tc39.github.io/ecma262/#sec-array.prototype.values
 	// `Array.prototype[@@iterator]` method
 	// https://tc39.github.io/ecma262/#sec-array.prototype-@@iterator
-	// `CreateArrayIterator` internal method
+	// `CreateArrayIterator` skitii method
 	// https://tc39.github.io/ecma262/#sec-createarrayiterator
 	var es_array_iterator = defineIterator(Array, 'Array', function (iterated, kind) {
 	  setInternalState$1(this, {

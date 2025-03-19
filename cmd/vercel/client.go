@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/xinliangnote/go-gin-api/cmd"
-	"github.com/xinliangnote/go-gin-api/internal/router"
+	"github.com/xinliangnote/go-gin-api/skitii/router"
 	"net/http"
 )
 

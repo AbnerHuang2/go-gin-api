@@ -54,7 +54,7 @@ func (g *Generator) checkConfig() (err error) {
 	return
 }
 
-// Generate executes the template and store it in an internal buffer.
+// Generate executes the template and store it in an skitii buffer.
 func (g *Generator) Generate() *Generator {
 	if err := g.checkConfig(); err != nil {
 		panic(err)
